@@ -9,6 +9,7 @@ export interface State {
     tableUuid: string,
     players: Record<string, Player>,
     votes: Record<string, Vote>,
+    voteScheme: 'fibonacci',
     revealVotes: boolean
 }
 
@@ -19,6 +20,7 @@ export function newState(tableUuid: string, player: Player): State {
         tableUuid,
         players: { [player.uuid]: player },
         votes: {},
+        voteScheme: 'fibonacci',
         revealVotes: false,
     }
 }
@@ -61,6 +63,7 @@ export function mergeState(oldState: State, newState: StateUpdate): State {
         tableUuid: oldState.tableUuid,
         players: mergePlayers(oldState.players, newState.players),
         votes: mergeVotes(oldState.votes, newState.votes),
+        voteScheme: newState.voteScheme ?? oldState.voteScheme,
         revealVotes: newState.revealVotes ?? oldState.revealVotes
     }
 }
