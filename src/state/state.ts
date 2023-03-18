@@ -1,6 +1,5 @@
-import WebCrypto from 'tiny-webcrypto';
-
-const randomUUID = WebCrypto.randomUUID;
+const nodeCrypto = require('crypto');
+const randomUUID = nodeCrypto.randomUUID;
 
 import { Player } from '@/state/player';
 import { Vote } from '@/state/vote';

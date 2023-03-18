@@ -1,5 +1,6 @@
-import WebCrypto from 'tiny-webcrypto';
-const randomUUID = WebCrypto.randomUUID;
+
+const nodeCrypto = require('crypto');
+const randomUUID = nodeCrypto.randomUUID;
 
 export interface Player {
     name: string,
