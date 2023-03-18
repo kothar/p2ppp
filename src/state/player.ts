@@ -1,6 +1,4 @@
-
-const nodeCrypto = require('crypto');
-const randomUUID = nodeCrypto.randomUUID;
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Player {
     name: string,
@@ -10,6 +8,6 @@ export interface Player {
 export function newPlayer(name: string): Player {
     return {
         name,
-        uuid: randomUUID()
+        uuid: uuidv4()
     };
 }

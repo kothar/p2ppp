@@ -1,6 +1,5 @@
 import { newPlayer, Player } from '@/state/player';
 import { addPlayer, addVote, mergeState, newState, State } from '@/state/state';
-import { object } from 'prop-types';
 import { Vote } from '@/state/vote';
 
 const uuidRegex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/;

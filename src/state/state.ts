@@ -1,5 +1,4 @@
-const nodeCrypto = require('crypto');
-const randomUUID = nodeCrypto.randomUUID;
+import { v4 as uuidv4 } from 'uuid';
 
 import { Player } from '@/state/player';
 import { Vote } from '@/state/vote';
@@ -30,7 +29,7 @@ function findLatestVote(state: State) {
 }
 
 export function addVote(state: State, player: Player, value: number | '?'): StateUpdate {
-    let voteId = randomUUID();
+    let voteId = uuidv4();
     return {
         tableUuid: state.tableUuid,
         votes: {
