@@ -14,10 +14,10 @@ export interface State {
 
 export type StateUpdate = Partial<State> & Pick<State, 'tableUuid'>
 
-export function newState(tableUuid: string, player: Player): State {
+export function newState(tableUuid: string): State {
     return {
         tableUuid,
-        players: { [player.uuid]: player },
+        players: {},
         votes: {},
         voteScheme: 'fibonacci',
         revealVotes: false,
