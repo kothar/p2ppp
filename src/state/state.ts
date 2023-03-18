@@ -1,3 +1,7 @@
+import WebCrypto from 'tiny-webcrypto';
+
+const randomUUID = WebCrypto.randomUUID;
+
 import { Player } from '@/state/player';
 import { Vote } from '@/state/vote';
 
@@ -16,6 +20,35 @@ export function newState(tableUuid: string, player: Player): State {
         players: { [player.uuid]: player },
         votes: {},
         revealVotes: false,
+    }
+}
+
+function findLatestVote(state: State) {
+    // TODO
+    return Object.keys(state.votes)[0] ?? state.tableUuid;
+}
+
+export function addVote(state: State, player: Player, value: number | '?'): StateUpdate {
+    let voteId = randomUUID();
+    return {
+        tableUuid: state.tableUuid,
+        votes: {
+            [voteId]: {
+                playerUuid: player.uuid,
+                uuid: voteId,
+                previousUuid: findLatestVote(state),
+                value
+            }
+        }
+    }
+}
+
+export function addPlayer(state: State, player: Player): StateUpdate {
+    return {
+        tableUuid: state.tableUuid,
+        players: {
+            [player.uuid]: player
+        }
     }
 }
 
