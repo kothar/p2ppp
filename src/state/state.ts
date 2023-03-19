@@ -11,7 +11,7 @@ export interface State {
     revealVotes: boolean
 }
 
-export type StateUpdate = Partial<State> & Pick<State, 'tableUuid'>
+export type StateUpdate = Partial<State> & Pick<State, 'tableUuid'> & { resetVotes?: boolean }
 
 export function newState(tableUuid: string): State {
     return {
@@ -76,9 +76,9 @@ export function mergeState(oldState: State, newState: StateUpdate): State {
     return {
         tableUuid: oldState.tableUuid,
         players: mergePlayers(oldState.players, newState.players),
-        votes: mergeVotes(oldState.votes, newState.votes),
+        votes: newState.resetVotes ? {} : mergeVotes(oldState.votes, newState.votes),
         voteScheme: newState.voteScheme ?? oldState.voteScheme,
-        revealVotes: newState.revealVotes ?? oldState.revealVotes
+        revealVotes: newState.resetVotes ? false : newState.revealVotes ?? oldState.revealVotes
     }
 }
 
