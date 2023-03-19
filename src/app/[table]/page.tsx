@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import styles from './page.module.css'
 import { useEffect, useState } from 'react';
 import { addPlayer, addVote, mergeState, newState, playerVote } from '@/state/state';
-import { usePlayer } from '@/state/player';
+import { Player, usePlayer } from '@/state/player';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -13,6 +13,9 @@ const voteSchemes: Record<string, Array<number | '?'>> = {
 
 export default function Home({ params }: { params: { table: string } }) {
     const { table } = params;
+
+    // const players = await getPlayers(table);
+
     const [state, setState] = useState(newState(table));
     const [player, setPlayer] = usePlayer();
 
