@@ -4,6 +4,8 @@ import styles from './page.module.css'
 import { useEffect, useState } from 'react';
 import { addPlayer, addVote, mergeState, newState, playerVote } from '@/state/state';
 import { Player, usePlayer } from '@/state/player';
+import { nextBuild } from 'next/dist/cli/next-build';
+import { nextStart } from 'next/dist/cli/next-start';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -11,10 +13,22 @@ const voteSchemes: Record<string, Array<number | '?'>> = {
     fibonacci: [1, 2, 3, 5, 8, 13, '?']
 };
 
+async function fetchPlayers(table: string) {
+    let playersResponse = await fetch(`/api/table/${table}`, { next: { revalidate: 10 } });
+    const players = await playersResponse.json() as Player[];
+
+    return Object.fromEntries(players.map(player => [player.uuid, player]));
+}
+
 export default function Home({ params }: { params: { table: string } }) {
     const { table } = params;
-
-    // const players = await getPlayers(table);
+    const [players, setPlayers] = useState<Record<string, Player>>({});
+    useEffect(() => {
+        (async () => {
+            const players = await fetchPlayers(table);
+            setPlayers(players);
+        })();
+    }, [table]);
 
     const [state, setState] = useState(newState(table));
     const [player, setPlayer] = usePlayer();
@@ -22,9 +36,10 @@ export default function Home({ params }: { params: { table: string } }) {
     useEffect(() => {
         const update = addPlayer(state, player);
         // TODO send update to group
-        const nextState = mergeState(state, update);
+        let nextState = mergeState(state, update);
+        nextState = mergeState(nextState, { tableUuid: state.tableUuid, players });
         setState(nextState);
-    }, [player]);
+    }, [player, players]);
 
     function updateVote(value: number | '?') {
         const update = addVote(state, player, value);
