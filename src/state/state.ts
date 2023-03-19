@@ -24,8 +24,24 @@ export function newState(tableUuid: string): State {
 }
 
 function findLatestVote(state: State) {
-    // TODO
+    // TODO find vote with most ancestors
     return Object.keys(state.votes)[0] ?? state.tableUuid;
+}
+
+function resolveVotes(state: State) {
+    // TODO apply votes in order
+    const votes: Record<string, Vote> = {}
+    Object.values(state.votes).forEach(vote => {
+        votes[vote.playerUuid] = vote;
+    })
+    return votes;
+}
+
+/**
+ * Identify the most recent vote for a player in the state
+ */
+export function playerVote(state: State, player: Player): Vote | undefined {
+    return resolveVotes(state)[player.uuid];
 }
 
 export function addVote(state: State, player: Player, value: number | '?'): StateUpdate {
