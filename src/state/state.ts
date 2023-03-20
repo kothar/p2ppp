@@ -13,10 +13,10 @@ export interface State {
 
 export type StateUpdate = Partial<State> & Pick<State, 'tableUuid'> & { resetVotes?: boolean }
 
-export function newState(tableUuid: string): State {
+export function newState(tableUuid: string, players: Record<string, Player>): State {
     return {
         tableUuid,
-        players: {},
+        players,
         votes: {},
         voteScheme: 'fibonacci',
         revealVotes: false,
