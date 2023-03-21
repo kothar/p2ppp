@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Player, setPlayerCookie } from '@/state/player';
 import styles from './Table.module.css'
 import { Inter } from 'next/font/google';
+import { PeerGroup } from '@/peer-group/PeerGroup';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -12,8 +13,13 @@ const voteSchemes: Record<string, Array<number | '?'>> = {
     fibonacci: [1, 2, 3, 5, 8, 13, '?']
 };
 
+const SSR = typeof self === 'undefined';
+
 export default function Table(props: { player: Player, players: Record<string, Player>, table: string }) {
     const { players, table } = props;
+
+    const [peerGroup] = useState(() => new PeerGroup(props.player, players));
+
     const [state, setState] = useState(newState(table, players));
     const [player, setPlayer] = useState(props.player);
 
@@ -23,6 +29,7 @@ export default function Table(props: { player: Player, players: Record<string, P
 
         const update = addPlayer(state, player);
         // TODO send update to group
+        // TODO send update to server
         let nextState = mergeState(state, update);
         setState(nextState);
     }
