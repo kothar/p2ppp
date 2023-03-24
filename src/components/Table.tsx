@@ -67,7 +67,7 @@ export default function Table(props: { player: Player, players: Record<string, P
 
     return <>
         <div className={styles.description}>
-            <a href="/">Yet Another Planning Poker</a>
+            <a href="/">P2PPP - Peer to Peer Planning Poker</a>
             <div>
                 {state.tableUuid}: <span onClick={editPlayerName}>{player.name}</span>
             </div>
