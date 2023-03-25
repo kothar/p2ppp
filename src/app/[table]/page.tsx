@@ -10,7 +10,6 @@ async function fetchPlayers(table: string) {
 }
 
 function getServerPlayer() {
-    // TODO set cookie
     const cookie = cookies().get(playerCookie);
     return (cookie && JSON.parse(cookie.value)) as Player ?? newPlayer('Player');
 }
@@ -20,7 +19,7 @@ export default async function Home({ params }: { params: { table: string } }) {
 
     const player = getServerPlayer();
     const players = await fetchPlayers(table);
-    if (!players[player.uuid]) {
+    if (players[player.uuid]?.name !== player.name) {
         players[player.uuid] = player;
         await storePlayer(table, player);
     }

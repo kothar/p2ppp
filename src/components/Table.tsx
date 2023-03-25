@@ -1,11 +1,11 @@
 'use client';
 
 import { addPlayer, addVote, mergeState, newState, playerVote } from '@/state/state';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Player, setPlayerCookie } from '@/state/player';
 import styles from './Table.module.css'
 import { Inter } from 'next/font/google';
-import { PeerGroup } from '@/peer-group/PeerGroup';
+import isNode from 'detect-node';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -13,24 +13,46 @@ const voteSchemes: Record<string, Array<number | '?'>> = {
     fibonacci: [1, 2, 3, 5, 8, 13, '?']
 };
 
-const SSR = typeof self === 'undefined';
+interface IPeerGroup {
+    setPlayers(players: string[]): void;
+}
 
 export default function Table(props: { player: Player, players: Record<string, Player>, table: string }) {
     const { players, table } = props;
 
-    const [peerGroup] = useState(() => new PeerGroup(props.player, players));
+    const [peerGroup, setPeerGroup] = useState<IPeerGroup | undefined>();
+    useEffect(() => {
+        if (!isNode) {
+            (async () => {
+                const { PeerGroup } = await import('@/peer-group/PeerGroup');
+                setPeerGroup(new PeerGroup(props.player.uuid));
+            })();
+        }
+    }, []);
 
     const [state, setState] = useState(newState(table, players));
     const [player, setPlayer] = useState(props.player);
+    peerGroup?.setPlayers(Object.keys(state.players));
 
-    function updatePlayer(player: Player) {
+    // Set player cookie on client side
+    setPlayerCookie(player);
+
+    async function updatePlayer(player: Player) {
         setPlayerCookie(player);
         setPlayer(player)
 
         const update = addPlayer(state, player);
         // TODO send update to group
-        // TODO send update to server
-        let nextState = mergeState(state, update);
+
+        // Send update to server
+        const players: Player[] = await fetch(`/api/table/${table}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(player),
+        }).then(r => r.json());
+
+        const playerMap = Object.fromEntries(players.map(player => [player.uuid, player]));
+        const nextState = mergeState(state, { tableUuid: table, players: playerMap });
         setState(nextState);
     }
 
@@ -40,7 +62,7 @@ export default function Table(props: { player: Player, players: Record<string, P
             updatePlayer({
                 ...player,
                 name: newName
-            })
+            }).catch(console.error);
         }
     }
 

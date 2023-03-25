@@ -6,8 +6,9 @@ const q = faunadb.query;
 // Acquire the secret and optional endpoint from environment variables
 const secret = process.env.FAUNADB_SECRET;
 const endpoint = process.env.FAUNADB_ENDPOINT || 'https://db.us.fauna.com';
-const collectionName = process.env.FAUNADB_COLLECTION || 'tablePlayers';
-const indexName = process.env.FAUNADB_COLLECTION || 'tableUuid';
+const collectionName = process.env.FAUNADB_COLLECTION || 'players';
+const tableIndex = process.env.FAUNADB_PLAYER_INDEX || 'table';
+const playerIndex = process.env.FAUNADB_PLAYER_INDEX || 'player';
 
 if (typeof secret === 'undefined' || secret === '') {
     console.error('The FAUNADB_SECRET environment variable is not set, exiting.');
@@ -32,16 +33,26 @@ const client = new faunadb.Client({
 export async function getPlayers(tableUuid: string): Promise<Player[]> {
     console.log(`Fetching players for table ${tableUuid}`);
     const ret: { data: [string, string][] } = await client.query(
-        q.Paginate(q.Match(q.Index(indexName), tableUuid))
+        q.Paginate(q.Match(q.Index(tableIndex), tableUuid), { size: 50 })
     );
     return ret.data.map(([uuid, name]) => ({ uuid, name }));
 }
 
 export async function storePlayer(tableUuid: string, player: Player) {
-    const res = await client.query(
-        q.Create(
-            q.Collection(collectionName),
-            { data: { tableUuid, playerUuid: player.uuid, playerName: player.name } },
+    console.log(`Updating player ${player.uuid} for table ${tableUuid}`);
+    await client.query(
+        q.Let(
+            {
+                docRef: q.Match(q.Index(playerIndex), tableUuid, player.uuid),
+                docData: { tableUuid, playerUuid: player.uuid, playerName: player.name }
+            },
+            q.If(
+                q.Exists(q.Var('docRef')),
+                q.Update(
+                    q.Select(['data', 0, 2], q.Paginate(q.Var('docRef'), { size: 1 })),
+                    { data: q.Var('docData') }),
+                q.Create(q.Collection(collectionName), { data: q.Var('docData') })
+            )
         )
     );
 }
