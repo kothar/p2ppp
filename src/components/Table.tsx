@@ -1,6 +1,6 @@
 'use client';
 
-import { addPlayer, addVote, mergeState, newState, playerVote } from '@/state/state';
+import { addPlayer, addVote, mergeState, newState, playerVote, StateUpdate } from '@/state/state';
 import { useEffect, useState } from 'react';
 import { Player, setPlayerCookie } from '@/state/player';
 import styles from './Table.module.css'
@@ -15,6 +15,8 @@ const voteSchemes: Record<string, Array<number | '?'>> = {
 
 interface IPeerGroup {
     setPlayers(players: string[]): void;
+
+    sendMessage(update: StateUpdate): void;
 
     close(): void;
 }
@@ -47,7 +49,9 @@ export default function Table(props: { player: Player, players: Record<string, P
         setPlayer(player);
 
         const update = addPlayer(state, player);
-        // TODO send update to group
+
+        // Send update to group
+        peerGroup?.sendMessage(update);
 
         // Send update to server
         const players: Player[] = await fetch(`/api/table/${table}`, {
@@ -73,21 +77,30 @@ export default function Table(props: { player: Player, players: Record<string, P
 
     function updateVote(value: number | '?') {
         const update = addVote(state, player, value);
-        // TODO send update to group
+
+        // Send update to group
+        peerGroup?.sendMessage(update);
+
         const nextState = mergeState(state, update);
         setState(nextState);
     }
 
     function revealVotes(reveal = true) {
         const update = { tableUuid: state.tableUuid, revealVotes: reveal };
-        // TODO send update to group
+
+        // Send update to group
+        peerGroup?.sendMessage(update);
+
         const nextState = mergeState(state, update);
         setState(nextState);
     }
 
     function resetVotes() {
         const update = { tableUuid: state.tableUuid, resetVotes: true };
-        // TODO send update to group
+
+        // Send update to group
+        peerGroup?.sendMessage(update);
+
         const nextState = mergeState(state, update);
         setState(nextState);
     }

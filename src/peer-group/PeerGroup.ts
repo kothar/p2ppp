@@ -1,4 +1,5 @@
 import Peer, { DataConnection } from 'peerjs';
+import { StateUpdate } from '@/state/state';
 
 function formatPeerId(tableUuid: string, playerUuid: string) {
     return `${tableUuid}_${playerUuid}`;
@@ -50,6 +51,16 @@ export class PeerGroup {
         players
             .filter(p => p !== this.playerUuid && !this.peers[formatPeerId(this.tableUuid, p)])
             .forEach(p => this.connect(p).catch(console.error));
+    }
+
+    sendMessage(update: StateUpdate) {
+        Object.entries(this.peers).forEach(([id, peer]) => {
+            if (peer === 'pending') {
+                console.log(`Unable to deliver update to peer ${id}: connection pending`);
+            } else {
+                peer.send(update);
+            }
+        });
     }
 
     async connect(remotePlayer: string) {
