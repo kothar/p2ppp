@@ -1,5 +1,5 @@
 import Peer, { DataConnection } from 'peerjs';
-import { StateUpdate } from '@/state/state';
+import { isStateUpdate, State, StateUpdate } from '@/state/state';
 
 function formatPeerId(tableUuid: string, playerUuid: string) {
     return `${tableUuid}_${playerUuid}`;
@@ -8,6 +8,8 @@ function formatPeerId(tableUuid: string, playerUuid: string) {
 export class PeerGroup {
     private peers: Record<string, DataConnection | 'pending'> = {};
     private localPeer: Promise<Peer>;
+    private state: State | undefined;
+    public onUpdate: ((update: StateUpdate) => void) | undefined;
 
     constructor(readonly tableUuid: string, readonly playerUuid: string) {
         this.localPeer = new Promise((resolve, reject) => {
@@ -53,6 +55,10 @@ export class PeerGroup {
             .forEach(p => this.connect(p).catch(console.error));
     }
 
+    setState(state: State) {
+        this.state = state;
+    }
+
     sendMessage(update: StateUpdate) {
         Object.entries(this.peers).forEach(([id, peer]) => {
             if (peer === 'pending') {
@@ -81,8 +87,11 @@ export class PeerGroup {
 
         // Receive messages
         conn
-            .on('data', function (data) {
+            .on('data', (data) => {
                 console.log(`Received from ${conn.peer}`, data);
+                if (isStateUpdate(data) && data.tableUuid === this.tableUuid) {
+                    this.onUpdate && this.onUpdate(data);
+                }
             })
             .on('error', e => {
                 console.error(e.message);

@@ -1,6 +1,6 @@
 'use client';
 
-import { addPlayer, addVote, mergeState, newState, playerVote, StateUpdate } from '@/state/state';
+import { addVote, mergeState, newState, playerVote, State, StateUpdate } from '@/state/state';
 import { useEffect, useState } from 'react';
 import { Player, setPlayerCookie } from '@/state/player';
 import styles from './Table.module.css'
@@ -16,6 +16,10 @@ const voteSchemes: Record<string, Array<number | '?'>> = {
 interface IPeerGroup {
     setPlayers(players: string[]): void;
 
+    setState(state: State): void;
+
+    onUpdate: ((update: StateUpdate) => void) | undefined;
+
     sendMessage(update: StateUpdate): void;
 
     close(): void;
@@ -24,34 +28,41 @@ interface IPeerGroup {
 export default function Table(props: { player: Player, players: Record<string, Player>, table: string }) {
     const { players, table } = props;
 
+    // Player
+    const [player, setPlayer] = useState(props.player);
+    setPlayerCookie(player);
+
+    // State
+    const [state, setState] = useState(newState(table, players));
     const [peerGroup, setPeerGroup] = useState<IPeerGroup | undefined>();
+    peerGroup?.setPlayers(Object.keys(state.players));
+    peerGroup?.setState(state);
+    peerGroup && (peerGroup.onUpdate = applyStateUpdate);
+
+    function applyStateUpdate(update: StateUpdate) {
+        setState(mergeState(state, update));
+    }
+
+    function propagateStateUpdate(update: StateUpdate) {
+        peerGroup?.sendMessage(update);
+        applyStateUpdate(update);
+    }
+
     useEffect(() => {
         let peerGroup: IPeerGroup | undefined;
         if (!isNode) {
             (async () => {
                 const { PeerGroup } = await import('@/peer-group/PeerGroup');
-                peerGroup = new PeerGroup(props.table, props.player.uuid);
+                peerGroup = new PeerGroup(table, player.uuid);
                 setPeerGroup(peerGroup);
             })();
         }
         return () => peerGroup?.close();
-    }, []);
-
-    const [state, setState] = useState(newState(table, players));
-    const [player, setPlayer] = useState(props.player);
-    peerGroup?.setPlayers(Object.keys(state.players));
-
-    // Set player cookie on client side
-    setPlayerCookie(player);
+    }, [table, player]);
 
     async function updatePlayer(player: Player) {
         setPlayerCookie(player);
         setPlayer(player);
-
-        const update = addPlayer(state, player);
-
-        // Send update to group
-        peerGroup?.sendMessage(update);
 
         // Send update to server
         const players: Player[] = await fetch(`/api/table/${table}`, {
@@ -61,8 +72,7 @@ export default function Table(props: { player: Player, players: Record<string, P
         }).then(r => r.json());
 
         const playerMap = Object.fromEntries(players.map(player => [player.uuid, player]));
-        const nextState = mergeState(state, { tableUuid: table, players: playerMap });
-        setState(nextState);
+        propagateStateUpdate({ tableUuid: table, players: playerMap });
     }
 
     function editPlayerName() {
@@ -76,33 +86,15 @@ export default function Table(props: { player: Player, players: Record<string, P
     }
 
     function updateVote(value: number | '?') {
-        const update = addVote(state, player, value);
-
-        // Send update to group
-        peerGroup?.sendMessage(update);
-
-        const nextState = mergeState(state, update);
-        setState(nextState);
+        propagateStateUpdate(addVote(state, player, value));
     }
 
     function revealVotes(reveal = true) {
-        const update = { tableUuid: state.tableUuid, revealVotes: reveal };
-
-        // Send update to group
-        peerGroup?.sendMessage(update);
-
-        const nextState = mergeState(state, update);
-        setState(nextState);
+        propagateStateUpdate({ tableUuid: state.tableUuid, revealVotes: reveal });
     }
 
     function resetVotes() {
-        const update = { tableUuid: state.tableUuid, resetVotes: true };
-
-        // Send update to group
-        peerGroup?.sendMessage(update);
-
-        const nextState = mergeState(state, update);
-        setState(nextState);
+        propagateStateUpdate({ tableUuid: state.tableUuid, resetVotes: true });
     }
 
     return <>
