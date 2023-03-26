@@ -1,37 +1,88 @@
 import Peer, { DataConnection } from 'peerjs';
 
-export class PeerGroup {
-    private peers: Record<string, DataConnection> = {};
-    private localPeer: Peer;
+function formatPeerId(tableUuid: string, playerUuid: string) {
+    return `${tableUuid}_${playerUuid}`;
+}
 
-    constructor(readonly playerUuid: string) {
-        this.localPeer = new Peer(playerUuid);
-        this.localPeer.on('open', id => {
-            console.log(`Local peer registered: ${id}`);
+export class PeerGroup {
+    private peers: Record<string, DataConnection | 'pending'> = {};
+    private localPeer: Promise<Peer>;
+
+    constructor(readonly tableUuid: string, readonly playerUuid: string) {
+        this.localPeer = new Promise((resolve, reject) => {
+            const peer = new Peer(formatPeerId(tableUuid, playerUuid), {
+                debug: 2
+            })
+                .on('open', id => {
+                    console.log(`Local peer registered: ${id}`);
+                    resolve(peer);
+                })
+                .on('error', e => {
+                    console.log(`Local peer error: ${e.message}`);
+
+                    // Rejects if error before initial connection established
+                    reject(e);
+                })
+                .on('connection', conn => {
+                    console.log(`Peer connection request from ${conn.peer}`);
+
+                    conn.on('open', () => {
+                        this.register(conn);
+                    });
+                })
+                .on('close', () => {
+                    console.log('Local peer connection closed');
+                });
         })
     }
 
-    connect(remotePlayer: string) {
-        console.log(`Connecting to peer ${remotePlayer}`);
-
-        const conn = this.localPeer.connect(remotePlayer);
-        conn.on('open', () => {
-            console.log(`Peer connection open to ${remotePlayer}`)
-
-            // Receive messages
-            conn.on('data', function (data) {
-                console.log(`Received from ${remotePlayer}`, data);
-            });
-
-            // Send messages
-            conn.send('Hello!');
-        })
-        this.peers[remotePlayer] = conn;
+    async close() {
+        try {
+            let localPeer = await this.localPeer;
+            Object.values(this.peers).map(peer => peer !== 'pending' && peer.close());
+            localPeer.destroy();
+        } catch (e: any) {
+            console.error(`Unable to close PeerGroup connections: ${e.message ?? 'unknown error'}`);
+        }
     }
 
     setPlayers(players: string[]) {
         players
-            .filter(p => p !== this.playerUuid && !this.peers[p])
-            .forEach(p => this.connect(p))
+            .filter(p => p !== this.playerUuid && !this.peers[formatPeerId(this.tableUuid, p)])
+            .forEach(p => this.connect(p).catch(console.error));
+    }
+
+    async connect(remotePlayer: string) {
+        const localPeer = await this.localPeer;
+        const peerId = formatPeerId(this.tableUuid, remotePlayer);
+        console.log(`Connecting to peer ${peerId}`);
+
+        this.peers[peerId] = 'pending';
+        const conn = localPeer
+            .connect(peerId)
+            .on('open', () => {
+                this.register(conn);
+            });
+    }
+
+    private register(conn: DataConnection) {
+        this.peers[conn.peer] = conn;
+
+        // Receive messages
+        conn
+            .on('data', function (data) {
+                console.log(`Received from ${conn.peer}`, data);
+            })
+            .on('error', e => {
+                console.error(e.message);
+                conn.close();
+            })
+            .on('close', () => {
+                // Remove peer from active connections
+                delete this.peers[conn.peer];
+                console.log(`Connection to peer ${conn.peer} closed`);
+            });
+
+        console.log(`Peer ${conn.peer} registered`);
     }
 }

@@ -15,6 +15,8 @@ const voteSchemes: Record<string, Array<number | '?'>> = {
 
 interface IPeerGroup {
     setPlayers(players: string[]): void;
+
+    close(): void;
 }
 
 export default function Table(props: { player: Player, players: Record<string, Player>, table: string }) {
@@ -22,12 +24,15 @@ export default function Table(props: { player: Player, players: Record<string, P
 
     const [peerGroup, setPeerGroup] = useState<IPeerGroup | undefined>();
     useEffect(() => {
+        let peerGroup: IPeerGroup | undefined;
         if (!isNode) {
             (async () => {
                 const { PeerGroup } = await import('@/peer-group/PeerGroup');
-                setPeerGroup(new PeerGroup(props.player.uuid));
+                peerGroup = new PeerGroup(props.table, props.player.uuid);
+                setPeerGroup(peerGroup);
             })();
         }
+        return () => peerGroup?.close();
     }, []);
 
     const [state, setState] = useState(newState(table, players));
@@ -39,7 +44,7 @@ export default function Table(props: { player: Player, players: Record<string, P
 
     async function updatePlayer(player: Player) {
         setPlayerCookie(player);
-        setPlayer(player)
+        setPlayer(player);
 
         const update = addPlayer(state, player);
         // TODO send update to group
