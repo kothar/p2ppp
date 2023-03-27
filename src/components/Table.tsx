@@ -7,7 +7,7 @@ import styles from './Table.module.css'
 import { Inter } from 'next/font/google';
 import isNode from 'detect-node';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 const voteSchemes: Record<string, Array<number | '?'>> = {
     fibonacci: [1, 2, 3, 5, 8, 13, '?']
@@ -115,9 +115,11 @@ export default function Table(props: { player: Player, players: Record<string, P
             })}
             {state.revealVotes ?
                 <div className={styles.card} onClick={() => revealVotes(false)}>
+                    <p className={inter.className}>Votes</p>
                     <h2 className={inter.className}>Hide</h2>
                 </div> :
                 <div className={styles.card} onClick={() => revealVotes()}>
+                    <p className={inter.className}>Votes</p>
                     <h2 className={inter.className}>Reveal</h2>
                 </div>
             }
@@ -137,6 +139,7 @@ export default function Table(props: { player: Player, players: Record<string, P
                     {voteSchemes[state.voteScheme].map(value => {
                         return <div key={value} className={styles.card}
                                     onClick={() => updateVote(value)}>
+                            <p className={inter.className}>&nbsp;</p>
                             <h2 className={inter.className}>{value}</h2>
                         </div>
                     })}
