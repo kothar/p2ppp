@@ -85,6 +85,9 @@ export class PeerGroup {
     private register(conn: DataConnection) {
         this.peers[conn.peer] = conn;
 
+        // Send current state
+        this.state && conn.send(this.state);
+
         // Receive messages
         conn
             .on('data', (data) => {
