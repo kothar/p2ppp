@@ -13,7 +13,7 @@ describe('Player', () => {
     });
 
     test('addPlayer creates valid update', () => {
-        const state = newState('table');
+        const state = newState('table', {});
         const playerUpdate = addPlayer(state, bob);
 
         expect(playerUpdate.players).toBeDefined();
@@ -25,7 +25,7 @@ describe('Player', () => {
     });
 
     test('updateState adds player', () => {
-        const state = newState('table');
+        const state = newState('table', {});
         const playerUpdate = addPlayer(state, bob);
 
         const state2 = mergeState(state, playerUpdate);
@@ -42,7 +42,7 @@ describe('Vote', () => {
     const carol = newPlayer('carol');
 
     test('addVote creates valid update', () => {
-        const state = newState('table');
+        const state = newState('table', {});
         const voteUpdate = addVote(state, bob, 1);
 
         expect(voteUpdate.votes).toBeDefined();
@@ -58,7 +58,7 @@ describe('Vote', () => {
     });
 
     test('addVote selects valid previous vote', () => {
-        let state = newState('table');
+        let state = newState('table', {});
         const voteUpdate1 = addVote(state, carol, 1);
         state = mergeState(state, voteUpdate1);
         const voteUpdate2 = addVote(state, bob, 2);
@@ -74,7 +74,7 @@ describe('Vote', () => {
     });
 
     test('updateState adds vote', () => {
-        const state = newState('table');
+        const state = newState('table', {});
         const voteUpdate = addVote(state, bob, 1);
 
         const state2 = mergeState(state, voteUpdate);
@@ -89,7 +89,7 @@ describe('Vote', () => {
 
 describe('State', () => {
     test('revealVotes merged to state', () => {
-        const state = newState('table');
+        const state = newState('table', {});
         const state2 = mergeState(state, { tableUuid: 'table', revealVotes: true });
 
         expect(state).toEqual(expect.objectContaining<Partial<State>>({

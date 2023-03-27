@@ -13,6 +13,7 @@ export interface State {
 
 export type StateUpdate = Partial<State> & Pick<State, 'tableUuid'> & { resetVotes?: boolean }
 
+// TODO identify state 'generation' to allow rejoining peers to reset their local state
 export function isStateUpdate(state: any): state is StateUpdate {
     return state && state.tableUuid;
 }

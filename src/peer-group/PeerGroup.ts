@@ -12,6 +12,8 @@ export class PeerGroup {
     public onUpdate: ((update: StateUpdate) => void) | undefined;
 
     constructor(readonly tableUuid: string, readonly playerUuid: string) {
+        // TODO use leader peer as coordinator for new peers rather than DB
+        // TODO reconnect after network loss
         this.localPeer = new Promise((resolve, reject) => {
             const peer = new Peer(formatPeerId(tableUuid, playerUuid), {
                 debug: 2
