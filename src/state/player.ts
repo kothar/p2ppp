@@ -23,6 +23,8 @@ export function getPlayerCookie(): Player {
 }
 
 export function setPlayerCookie(newPlayer: Player) {
-    Cookies.set(playerCookie, JSON.stringify(newPlayer));
+    Cookies.set(playerCookie, JSON.stringify(newPlayer), {
+        expires: 30
+    });
 }
 

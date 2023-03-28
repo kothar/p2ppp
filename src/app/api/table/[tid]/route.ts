@@ -21,5 +21,5 @@ export async function POST(request: NextRequest, context: { params: { tid: strin
 
     const player = { uuid, name };
     await storePlayer(tid, player);
-    return Response.redirect(request.url, 303); // See other
+    return new Response(JSON.stringify({ result: 'success' }));
 }

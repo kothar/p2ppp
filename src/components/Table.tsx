@@ -1,11 +1,12 @@
 'use client';
 
-import { addVote, mergeState, newState, playerVote, State, StateUpdate } from '@/state/state';
+import { addPlayer, addVote, mergeState, newState, playerVote, State, StateUpdate } from '@/state/state';
 import { useEffect, useState } from 'react';
 import { Player, setPlayerCookie } from '@/state/player';
 import styles from './Table.module.css'
 import { Inter } from 'next/font/google';
 import isNode from 'detect-node';
+import assert from 'assert';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -58,21 +59,22 @@ export default function Table(props: { player: Player, players: Record<string, P
             })();
         }
         return () => peerGroup?.close();
-    }, [table, player]);
+    }, [table, player.uuid]);
 
     async function updatePlayer(player: Player) {
         setPlayerCookie(player);
         setPlayer(player);
 
         // Send update to server
-        const players: Player[] = await fetch(`/api/table/${table}`, {
+        const response: { result    : 'success' | 'failure' } = await fetch(`/api/table/${table}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(player),
         }).then(r => r.json());
+        console.log(response);
+        assert.equal(response.result, 'success');
 
-        const playerMap = Object.fromEntries(players.map(player => [player.uuid, player]));
-        propagateStateUpdate({ tableUuid: table, players: playerMap });
+        propagateStateUpdate(addPlayer(state, player));
     }
 
     function editPlayerName() {
@@ -105,7 +107,7 @@ export default function Table(props: { player: Player, players: Record<string, P
             </div>
         </div>
 
-        <div className={styles.center}>
+        <div className={styles.grid}>
             {Object.values(state.players).map(player => {
                 const vote = playerVote(state, player);
                 return <div className={styles.card} key={player.uuid}>
@@ -115,11 +117,9 @@ export default function Table(props: { player: Player, players: Record<string, P
             })}
             {state.revealVotes ?
                 <div className={styles.card} onClick={() => revealVotes(false)}>
-                    <p className={inter.className}>Votes</p>
                     <h2 className={inter.className}>Hide</h2>
                 </div> :
                 <div className={styles.card} onClick={() => revealVotes()}>
-                    <p className={inter.className}>Votes</p>
                     <h2 className={inter.className}>Reveal</h2>
                 </div>
             }
