@@ -1,14 +1,23 @@
 'use client';
 
-import { addPlayer, addVote, mergeState, newState, playerVote, State, StateUpdate } from '@/state/state';
-import { useEffect, useState } from 'react';
-import { Player, setPlayerCookie } from '@/state/player';
+import {
+    addPlayer,
+    addVote,
+    mergeState,
+    newState, nextRound,
+    playerVote,
+    State,
+    StateUpdate,
+    updateRevealVotes
+} from '@/state/state';
+import {useEffect, useState} from 'react';
+import {Player, setPlayerCookie} from '@/state/player';
 import styles from './Table.module.css'
-import { Inter } from 'next/font/google';
+import {Inter} from 'next/font/google';
 import isNode from 'detect-node';
 import assert from 'assert';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({subsets: ['latin']});
 
 const voteSchemes: Record<string, Array<number | '?'>> = {
     fibonacci: [1, 2, 3, 5, 8, 13, '?']
@@ -27,7 +36,7 @@ interface IPeerGroup {
 }
 
 export default function Table(props: { player: Player, players: Record<string, Player>, table: string }) {
-    const { players, table } = props;
+    const {players, table} = props;
 
     // Player
     const [player, setPlayer] = useState(props.player);
@@ -53,7 +62,7 @@ export default function Table(props: { player: Player, players: Record<string, P
         let peerGroup: IPeerGroup | undefined;
         if (!isNode) {
             (async () => {
-                const { PeerGroup } = await import('@/peer-group/PeerGroup');
+                const {PeerGroup} = await import('@/peer-group/PeerGroup');
                 peerGroup = new PeerGroup(table, player.uuid);
                 setPeerGroup(peerGroup);
             })();
@@ -66,9 +75,9 @@ export default function Table(props: { player: Player, players: Record<string, P
         setPlayer(player);
 
         // Send update to server
-        const response: { result    : 'success' | 'failure' } = await fetch(`/api/table/${table}`, {
+        const response: { result: 'success' | 'failure' } = await fetch(`/api/table/${table}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(player),
         }).then(r => r.json());
         console.log(response);
@@ -92,11 +101,11 @@ export default function Table(props: { player: Player, players: Record<string, P
     }
 
     function revealVotes(reveal = true) {
-        propagateStateUpdate({ tableUuid: state.tableUuid, revealVotes: reveal });
+        propagateStateUpdate(updateRevealVotes(state, reveal));
     }
 
     function resetVotes() {
-        propagateStateUpdate({ tableUuid: state.tableUuid, resetVotes: true });
+        propagateStateUpdate(nextRound(state));
     }
 
     return <>

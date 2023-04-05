@@ -1,26 +1,27 @@
-import { v4 as uuidv4 } from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 
-import { Player } from '@/state/player';
-import { Vote } from '@/state/vote';
+import {Player} from '@/state/player';
+import {Vote} from '@/state/vote';
 
 export interface State {
     tableUuid: string,
+    round: number,
     players: Record<string, Player>,
     votes: Record<string, Vote>,
     voteScheme: 'fibonacci',
     revealVotes: boolean
 }
 
-export type StateUpdate = Partial<State> & Pick<State, 'tableUuid'> & { resetVotes?: boolean }
+export type StateUpdate = Partial<State> & Pick<State, 'tableUuid' | 'round'>;
 
-// TODO identify state 'generation' to allow rejoining peers to reset their local state
 export function isStateUpdate(state: any): state is StateUpdate {
-    return state && state.tableUuid;
+    return state && state.tableUuid && state.round;
 }
 
 export function newState(tableUuid: string, players: Record<string, Player>): State {
     return {
         tableUuid,
+        round: 1,
         players,
         votes: {},
         voteScheme: 'fibonacci',
@@ -53,6 +54,7 @@ export function addVote(state: State, player: Player, value: number | '?'): Stat
     let voteId = uuidv4();
     return {
         tableUuid: state.tableUuid,
+        round: state.round,
         votes: {
             [voteId]: {
                 playerUuid: player.uuid,
@@ -64,9 +66,27 @@ export function addVote(state: State, player: Player, value: number | '?'): Stat
     }
 }
 
+export function updateRevealVotes(state: State, revealVotes: boolean): StateUpdate {
+    return {
+        tableUuid: state.tableUuid,
+        round: state.round,
+        revealVotes
+    }
+}
+
+export function nextRound(state: State): StateUpdate {
+    return {
+        tableUuid: state.tableUuid,
+        round: state.round + 1,
+        revealVotes: false,
+        votes: {}
+    }
+}
+
 export function addPlayer(state: State, player: Player): StateUpdate {
     return {
         tableUuid: state.tableUuid,
+        round: state.round,
         players: {
             [player.uuid]: player
         }
@@ -77,13 +97,19 @@ export function mergeState(oldState: State, newState: StateUpdate): State {
     if (oldState.tableUuid !== newState.tableUuid) {
         throw new Error('Invalid state update: tableUuid does not match');
     }
+    if (oldState.round > newState.round) {
+        throw new Error('Invalid state update: round is older than current round');
+    }
+
+    const resetVotes = newState.round > oldState.round;
 
     return {
         tableUuid: oldState.tableUuid,
+        round: newState.round,
         players: mergePlayers(oldState.players, newState.players),
-        votes: newState.resetVotes ? {} : mergeVotes(oldState.votes, newState.votes),
+        votes: mergeVotes(resetVotes ? {} : oldState.votes, newState.votes),
         voteScheme: newState.voteScheme ?? oldState.voteScheme,
-        revealVotes: newState.resetVotes ? false : newState.revealVotes ?? oldState.revealVotes
+        revealVotes: newState.revealVotes ?? (resetVotes ? false : oldState.revealVotes)
     }
 }
 

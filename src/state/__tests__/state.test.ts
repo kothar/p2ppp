@@ -1,6 +1,6 @@
-import { newPlayer, Player } from '@/state/player';
-import { addPlayer, addVote, mergeState, newState, State } from '@/state/state';
-import { Vote } from '@/state/vote';
+import {newPlayer, Player} from '@/state/player';
+import {addPlayer, addVote, mergeState, newState, nextRound, State, updateRevealVotes} from '@/state/state';
+import {Vote} from '@/state/vote';
 
 const uuidRegex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/;
 
@@ -90,7 +90,7 @@ describe('Vote', () => {
 describe('State', () => {
     test('revealVotes merged to state', () => {
         const state = newState('table', {});
-        const state2 = mergeState(state, { tableUuid: 'table', revealVotes: true });
+        const state2 = mergeState(state, updateRevealVotes(state, true));
 
         expect(state).toEqual(expect.objectContaining<Partial<State>>({
             tableUuid: 'table',
@@ -100,6 +100,25 @@ describe('State', () => {
         expect(state2).toEqual(expect.objectContaining<Partial<State>>({
             tableUuid: 'table',
             revealVotes: true
+        }));
+    });
+
+    test('new round resets votes', () => {
+        const state = newState('table', {});
+        const vote = {playerUuid: "player1", previousUuid: "table", uuid: "vote", value: 3};
+        state.votes['vote1'] = vote;
+        const state2 = mergeState(state, nextRound(state));
+
+        expect(state).toEqual(expect.objectContaining<Partial<State>>({
+            tableUuid: 'table',
+            round: 1,
+            votes: {'vote1': vote}
+        }));
+
+        expect(state2).toEqual(expect.objectContaining<Partial<State>>({
+            tableUuid: 'table',
+            round: 2,
+            votes: {}
         }));
     });
 });
