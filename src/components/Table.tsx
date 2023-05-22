@@ -10,14 +10,14 @@ import {
     StateUpdate,
     updateRevealVotes
 } from '@/state/state';
-import {useEffect, useState} from 'react';
-import {Player, setPlayerCookie} from '@/state/player';
+import { useEffect, useState } from 'react';
+import { getPlayerCookie, newPlayer, Player, setPlayerCookie } from '@/state/player';
 import styles from './Table.module.css'
-import {Inter} from 'next/font/google';
+import { Inter } from 'next/font/google';
 import isNode from 'detect-node';
 import assert from 'assert';
 
-const inter = Inter({subsets: ['latin']});
+const inter = Inter({ subsets: ['latin'] });
 
 const voteSchemes: Record<string, Array<number | '?'>> = {
     fibonacci: [1, 2, 3, 5, 8, 13, '?']
@@ -35,12 +35,14 @@ interface IPeerGroup {
     close(): void;
 }
 
-export default function Table(props: { player: Player, players: Record<string, Player>, table: string }) {
-    const {players, table} = props;
+export default function Table(props: { player?: Player, players: Record<string, Player>, table: string }) {
+    const { players, table } = props;
 
     // Player
     const [player, setPlayer] = useState(props.player);
-    setPlayerCookie(player);
+    if (!player) {
+        updatePlayer(getPlayerCookie() || newPlayer('Player')).catch(console.error);
+    }
 
     // State
     const [state, setState] = useState(newState(table, players));
@@ -60,15 +62,15 @@ export default function Table(props: { player: Player, players: Record<string, P
 
     useEffect(() => {
         let peerGroup: IPeerGroup | undefined;
-        if (!isNode) {
+        if (!isNode && player) {
             (async () => {
-                const {PeerGroup} = await import('@/peer-group/PeerGroup');
+                const { PeerGroup } = await import('@/peer-group/PeerGroup');
                 peerGroup = new PeerGroup(table, player.uuid);
                 setPeerGroup(peerGroup);
             })();
         }
         return () => peerGroup?.close();
-    }, [table, player.uuid]);
+    }, [table, player?.uuid]);
 
     async function updatePlayer(player: Player) {
         setPlayerCookie(player);
@@ -77,7 +79,7 @@ export default function Table(props: { player: Player, players: Record<string, P
         // Send update to server
         const response: { result: 'success' | 'failure' } = await fetch(`/api/table/${table}`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(player),
         }).then(r => r.json());
         console.log(response);
@@ -87,7 +89,11 @@ export default function Table(props: { player: Player, players: Record<string, P
     }
 
     function editPlayerName() {
-        const newName = prompt('Enter new player name', player?.name ?? 'Player');
+        if (!player) {
+            return;
+        }
+
+        const newName = prompt('Enter new player name', player.name);
         if (newName) {
             updatePlayer({
                 ...player,
@@ -97,6 +103,10 @@ export default function Table(props: { player: Player, players: Record<string, P
     }
 
     function updateVote(value: number | '?') {
+        if (!player) {
+            return;
+        }
+
         propagateStateUpdate(addVote(state, player, value));
     }
 
@@ -112,7 +122,7 @@ export default function Table(props: { player: Player, players: Record<string, P
         <div className={styles.description}>
             <a href="/">P2PPP - Peer to Peer Planning Poker</a>
             <div>
-                {state.tableUuid}: <span onClick={editPlayerName}>{player.name}</span>
+                {player?.name} <button onClick={editPlayerName}>Change name</button>
             </div>
         </div>
 

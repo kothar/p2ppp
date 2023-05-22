@@ -1,5 +1,5 @@
 import styles from './page.module.css'
-import { newPlayer, Player, playerCookie } from '@/state/player';
+import { Player, playerCookie } from '@/state/player';
 import Table from '@/components/Table';
 import { cookies } from 'next/headers';
 import { getPlayers, storePlayer } from '@/db/tablePlayers';
@@ -11,17 +11,22 @@ async function fetchPlayers(table: string) {
 
 function getServerPlayer() {
     const cookie = cookies().get(playerCookie);
-    return (cookie && JSON.parse(cookie.value)) as Player ?? newPlayer('Player');
+    if (cookie) {
+        return JSON.parse(cookie.value) as Player;
+    }
+    return undefined;
 }
 
 export default async function Home({ params }: { params: { table: string } }) {
     const { table } = params;
 
-    const player = getServerPlayer();
     const players = await fetchPlayers(table);
-    if (players[player.uuid]?.name !== player.name) {
-        players[player.uuid] = player;
-        await storePlayer(table, player);
+    const player = getServerPlayer();
+    if (player) {
+        if (players[player.uuid]?.name !== player.name) {
+            players[player.uuid] = player;
+            await storePlayer(table, player);
+        }
     }
 
     return (

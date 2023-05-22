@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import Cookies from 'js-cookie'
 
-export const playerCookie = 'yapp-player';
+export const playerCookie = 'p2ppp-player';
 
 export interface Player {
     name: string,
@@ -15,11 +15,12 @@ export function newPlayer(name: string): Player {
     };
 }
 
-export function getPlayerCookie(): Player {
+export function getPlayerCookie(): Player | undefined {
     const cookie = Cookies.get(playerCookie);
-    const player = (cookie && JSON.parse(cookie)) as Player;
-
-    return player ?? newPlayer('Player');
+    if (cookie) {
+        return JSON.parse(cookie) as Player;
+    }
+    return undefined;
 }
 
 export function setPlayerCookie(newPlayer: Player) {
