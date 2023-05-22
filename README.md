@@ -1,6 +1,6 @@
 ## Peer to Peer Planning Poker
 
-### [Live site](https://p2ppp.vercel.app)
+### [Live site](https://p2ppp.kothar.net)
 
 P2PPP is a proof-of-concept planning poker app using peer-to-peer
 [WebRTC data channels][dc] to coordinate voting among players at a
@@ -28,7 +28,16 @@ of mine, see [vote.poker][vp] ([code][vpc]).
 
 ## Getting Started
 
-First, run the development server:
+First, install the project dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+Next, run the development server:
 
 ```bash
 npm run dev
