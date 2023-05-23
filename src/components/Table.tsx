@@ -8,7 +8,7 @@ import {
     playerVote,
     State,
     StateUpdate,
-    updateRevealVotes
+    updateRevealVotes, updateVoteScheme, voteSchemes
 } from '@/state/state';
 import { useEffect, useState } from 'react';
 import { getPlayerCookie, newPlayer, Player, setPlayerCookie } from '@/state/player';
@@ -18,10 +18,6 @@ import isNode from 'detect-node';
 import assert from 'assert';
 
 const inter = Inter({ subsets: ['latin'] });
-
-const voteSchemes: Record<string, Array<number | '?'>> = {
-    fibonacci: [1, 2, 3, 5, 8, 13, '?']
-};
 
 interface IPeerGroup {
     setPlayers(players: string[]): void;
@@ -50,6 +46,9 @@ export default function Table(props: { player?: Player, players: Record<string, 
     peerGroup?.setPlayers(Object.keys(state.players));
     peerGroup?.setState(state);
     peerGroup && (peerGroup.onUpdate = applyStateUpdate);
+
+    // UI
+    const [showSchemes, setShowScemes] = useState(false);
 
     function applyStateUpdate(update: StateUpdate) {
         setState(mergeState(state, update));
@@ -110,6 +109,10 @@ export default function Table(props: { player?: Player, players: Record<string, 
         propagateStateUpdate(addVote(state, player, value));
     }
 
+    function editVoteScheme(voteScheme: keyof typeof voteSchemes) {
+        propagateStateUpdate(updateVoteScheme(state, voteScheme));
+    }
+
     function revealVotes(reveal = true) {
         propagateStateUpdate(updateRevealVotes(state, reveal));
     }
@@ -122,7 +125,8 @@ export default function Table(props: { player?: Player, players: Record<string, 
         <div className={styles.description}>
             <a href="/">P2PPP - Peer to Peer Planning Poker</a>
             <div>
-                {player?.name} <button onClick={editPlayerName}>Change name</button>
+                {player?.name}&nbsp;
+                <button onClick={editPlayerName}>Change name</button>
             </div>
         </div>
 
@@ -144,14 +148,29 @@ export default function Table(props: { player?: Player, players: Record<string, 
             }
         </div>
 
-        <div className={styles.grid}>
-            {state.revealVotes ?
+        {state.revealVotes ?
+            <div className={styles.grid}>
                 <div className={styles.card} onClick={() => resetVotes()}>
                     <p className={inter.className}>Voting complete</p>
                     <h2 className={inter.className}>Reset</h2>
-                </div> :
-                <>
-                    <div className={styles.card}>
+                </div>
+            </div> :
+
+            <>
+                <div className={styles.grid}>
+                    <div className={`${styles.grid} ${styles.schemes}`}
+                         style={{ display: showSchemes ? 'inherit' : 'none' }}>
+                        {Object.keys(voteSchemes).map(voteScheme =>
+                            <div className={styles.card} key={voteScheme} onClick={() => {
+                                editVoteScheme(voteScheme);
+                                setShowScemes(false);
+                            }}>
+                                <p className={inter.className}>Scheme</p>
+                                <h2 className={inter.className}>{voteScheme}</h2>
+                            </div>
+                        )}
+                    </div>
+                    <div className={styles.card} onClick={() => setShowScemes(!showSchemes)}>
                         <p className={inter.className}>Scheme</p>
                         <h2 className={inter.className}>{state.voteScheme}</h2>
                     </div>
@@ -162,8 +181,8 @@ export default function Table(props: { player?: Player, players: Record<string, 
                             <h2 className={inter.className}>{value}</h2>
                         </div>
                     })}
-                </>
-            }
-        </div>
+                </div>
+            </>
+        }
     </>
 }

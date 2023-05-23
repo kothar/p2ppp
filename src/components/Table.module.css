@@ -44,6 +44,12 @@
     grid-template-columns: repeat(8, minmax(5%, auto));
     width: var(--max-width);
     max-width: 100%;
+    position: relative;
+}
+
+.grid.schemes {
+    position: absolute;
+    bottom: 100px;
 }
 
 .card {

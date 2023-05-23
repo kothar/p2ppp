@@ -1,14 +1,21 @@
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
-import {Player} from '@/state/player';
-import {Vote} from '@/state/vote';
+import { Player } from '@/state/player';
+import { Vote } from '@/state/vote';
+
+export const voteSchemes: Record<string, Array<number | '?'>> = {
+    linear: [1, 2, 3, 4, 5, 6, '?'],
+    fibonacci: [1, 2, 3, 5, 8, 13, '?'],
+    quadratic: [1, 4, 9, 16, 25, 36, '?'],
+    exponential: [1, 2, 4, 8, 16, 32, '?']
+};
 
 export interface State {
     tableUuid: string,
     round: number,
     players: Record<string, Player>,
     votes: Record<string, Vote>,
-    voteScheme: 'fibonacci',
+    voteScheme: keyof typeof voteSchemes,
     revealVotes: boolean
 }
 
@@ -74,11 +81,20 @@ export function updateRevealVotes(state: State, revealVotes: boolean): StateUpda
     }
 }
 
+export function updateVoteScheme(state: State, voteScheme: keyof typeof voteSchemes): StateUpdate {
+    return {
+        tableUuid: state.tableUuid,
+        round: state.round,
+        voteScheme
+    }
+}
+
 export function nextRound(state: State): StateUpdate {
     return {
         tableUuid: state.tableUuid,
         round: state.round + 1,
         revealVotes: false,
+        voteScheme: state.voteScheme,
         votes: {}
     }
 }
