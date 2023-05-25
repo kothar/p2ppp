@@ -4,10 +4,11 @@ import { Player } from '@/state/player';
 import { Vote } from '@/state/vote';
 
 export const voteSchemes: Record<string, Array<number | '?'>> = {
-    linear: [1, 2, 3, 4, 5, 6, '?'],
-    fibonacci: [1, 2, 3, 5, 8, 13, '?'],
-    quadratic: [1, 4, 9, 16, 25, 36, '?'],
-    exponential: [1, 2, 4, 8, 16, 32, '?']
+    linear: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, '?'],
+    cohn: [0, 1, 2, 3, 5, 8, 13, 20, 40, 100, '?'],
+    fibonacci: [0, 1, 2, 3, 5, 8, 13, 21, '?'],
+    quadratic: [0, 1, 4, 9, 16, 25, 36, 49, '?'],
+    exponential: [0, 1, 2, 4, 8, 16, 32, 64, '?']
 };
 
 export interface State {

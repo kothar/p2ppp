@@ -7,7 +7,7 @@ function formatPeerId(tableUuid: string, playerUuid: string) {
 
 export class PeerGroup {
     private peers: Record<string, DataConnection | 'pending'> = {};
-    private localPeer: Promise<Peer>;
+    private readonly localPeer: Promise<Peer>;
     private state: State | undefined;
     public onUpdate: ((update: StateUpdate) => void) | undefined;
 
@@ -84,6 +84,11 @@ export class PeerGroup {
             });
     }
 
+    isConnected(peer: string) {
+        const conn = this.peers[formatPeerId(this.tableUuid, peer)];
+        return conn != undefined && conn != 'pending';
+    }
+
     private register(conn: DataConnection) {
         this.peers[conn.peer] = conn;
 
@@ -94,7 +99,7 @@ export class PeerGroup {
         conn
             .on('data', (data) => {
                 console.log(`Received from ${conn.peer}`, data);
-                if (isStateUpdate(data) && data.tableUuid === this.tableUuid) {
+                if (isStateUpdate(data) && data.tableUuid === this.tableUuid && data.round >= (this.state?.round ?? 0)) {
                     this.onUpdate && this.onUpdate(data);
                 }
             })

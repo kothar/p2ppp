@@ -29,6 +29,8 @@ interface IPeerGroup {
     sendMessage(update: StateUpdate): void;
 
     close(): void;
+
+    isConnected(peer: string): boolean
 }
 
 export default function Table(props: { player?: Player, players: Record<string, Player>, table: string }) {
@@ -121,66 +123,72 @@ export default function Table(props: { player?: Player, players: Record<string, 
         propagateStateUpdate(nextRound(state));
     }
 
+    function computePeerStyle(peer: Player) {
+        return styles.card;
+        // return `${styles.card} ${peerGroup?.isConnected(peer.uuid) ? styles.connected : ''}  ${peer.uuid === player?.uuid ? styles.self : ''}`;
+    }
+
     return <>
         <div className={styles.description}>
             <a href="/">P2PPP - Peer to Peer Planning Poker</a>
             <div>
-                {player?.name}&nbsp;
-                <button onClick={editPlayerName}>Change name</button>
+                <span className={styles.card}>{player?.name}</span>
+                <button className={styles.card} onClick={editPlayerName}>Change name</button>
             </div>
         </div>
 
         <div className={styles.grid}>
-            {Object.values(state.players).map(player => {
-                const vote = playerVote(state, player);
-                return <div className={styles.card} key={player.uuid}>
-                    <p className={inter.className}>{player.name}</p>
+            {Object.values(state.players).map(peer => {
+                const vote = playerVote(state, peer);
+                return <div className={computePeerStyle(peer)} key={peer.uuid}>
+                    <p className={inter.className}>{peer.name}</p>
                     <h2 className={inter.className}>{state.revealVotes ? vote?.value ?? '?' : (vote ? '✔' : '⋯')}</h2>
                 </div>
             })}
             {state.revealVotes ?
-                <div className={styles.card} onClick={() => revealVotes(false)}>
+                <button className={styles.card} onClick={() => revealVotes(false)}>
                     <h2 className={inter.className}>Hide</h2>
-                </div> :
-                <div className={styles.card} onClick={() => revealVotes()}>
+                </button> :
+                <button className={styles.card} onClick={() => revealVotes()}>
                     <h2 className={inter.className}>Reveal</h2>
-                </div>
+                </button>
             }
         </div>
 
         {state.revealVotes ?
             <div className={styles.grid}>
-                <div className={styles.card} onClick={() => resetVotes()}>
+                <button className={styles.card} onClick={() => resetVotes()}>
                     <p className={inter.className}>Voting complete</p>
                     <h2 className={inter.className}>Reset</h2>
-                </div>
+                </button>
             </div> :
 
             <>
                 <div className={styles.grid}>
+                    <button className={styles.card} onClick={() => setShowScemes(!showSchemes)}>
+                        <p className={inter.className}>Scheme</p>
+                        <h2 className={inter.className}>{state.voteScheme}</h2>
+                    </button>
+                    {voteSchemes[state.voteScheme].map(value => {
+                        return <button key={value} className={styles.card}
+                                       onClick={() => updateVote(value)}>
+                            <p className={inter.className}>&nbsp;</p>
+                            <h2 className={inter.className}>{value}</h2>
+                        </button>
+                    })}
+
                     <div className={`${styles.grid} ${styles.schemes}`}
                          style={{ display: showSchemes ? 'inherit' : 'none' }}>
                         {Object.keys(voteSchemes).map(voteScheme =>
-                            <div className={styles.card} key={voteScheme} onClick={() => {
+                            <button className={styles.card} key={voteScheme} onClick={() => {
                                 editVoteScheme(voteScheme);
                                 setShowScemes(false);
                             }}>
                                 <p className={inter.className}>Scheme</p>
                                 <h2 className={inter.className}>{voteScheme}</h2>
-                            </div>
+                            </button>
                         )}
                     </div>
-                    <div className={styles.card} onClick={() => setShowScemes(!showSchemes)}>
-                        <p className={inter.className}>Scheme</p>
-                        <h2 className={inter.className}>{state.voteScheme}</h2>
-                    </div>
-                    {voteSchemes[state.voteScheme].map(value => {
-                        return <div key={value} className={styles.card}
-                                    onClick={() => updateVote(value)}>
-                            <p className={inter.className}>&nbsp;</p>
-                            <h2 className={inter.className}>{value}</h2>
-                        </div>
-                    })}
                 </div>
             </>
         }
