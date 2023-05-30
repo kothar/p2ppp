@@ -16,7 +16,6 @@ export class PeerGroup {
         // TODO reconnect after network loss
         this.localPeer = new Promise((resolve, reject) => {
             const peer = new Peer(formatPeerId(tableUuid, playerUuid), {
-                debug: 2
             })
                 .on('open', id => {
                     console.log(`Local peer registered: ${id}`);
@@ -72,6 +71,7 @@ export class PeerGroup {
     }
 
     async connect(remotePlayer: string) {
+        // TODO attempt automatic reconnection in case of network loss
         const localPeer = await this.localPeer;
         const peerId = formatPeerId(this.tableUuid, remotePlayer);
         console.log(`Connecting to peer ${peerId}`);
@@ -81,7 +81,16 @@ export class PeerGroup {
             .connect(peerId)
             .on('open', () => {
                 this.register(conn);
+            })
+            .on('error', e => {
+                delete this.peers[conn.peer];
+                conn.close();
             });
+    }
+
+    isConnecting(peer: string) {
+        const conn = this.peers[formatPeerId(this.tableUuid, peer)];
+        return conn === 'pending';
     }
 
     isConnected(peer: string) {
@@ -102,10 +111,6 @@ export class PeerGroup {
                 if (isStateUpdate(data) && data.tableUuid === this.tableUuid && data.round >= (this.state?.round ?? 0)) {
                     this.onUpdate && this.onUpdate(data);
                 }
-            })
-            .on('error', e => {
-                console.error(e.message);
-                conn.close();
             })
             .on('close', () => {
                 // Remove peer from active connections

@@ -37,6 +37,75 @@ yarn install
 pnpm install
 ```
 
+*Fauna is temporarily required to allow peers to discover each other*
+
+Sign up for a Fauna DB account and create a collection with the 
+following properties:
+```json5
+{
+  name: "players",
+  history_days: 0,
+  ttl_days: 1
+}
+```
+
+Create the following indices:
+```json5
+{
+  name: "player",
+  unique: true,
+  serialized: true,
+  source: "players",
+  terms: [
+    {
+      field: ["data", "tableUuid"]
+    },
+    {
+      field: ["data", "playerUuid"]
+    }
+  ],
+  values: [
+    {
+      field: ["data", "playerUuid"]
+    },
+    {
+      field: ["data", "playerName"]
+    },
+    {
+      field: ["ref"]
+    }
+  ]
+}
+```
+
+```json5
+{
+  name: "table",
+  unique: false,
+  serialized: true,
+  source: "players",
+  terms: [
+    {
+      field: ["data", "tableUuid"]
+    }
+  ],
+  values: [
+    {
+      field: ["data", "playerUuid"]
+    },
+    {
+      field: ["data", "playerName"]
+    }
+  ]
+}
+```
+
+Create a `.env.local` file in your working directory containing a 
+Fauna DB key:
+```bash
+FAUNADB_SECRET=<key with read/write access to your DB table>
+```
+
 Next, run the development server:
 
 ```bash

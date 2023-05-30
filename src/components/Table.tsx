@@ -30,6 +30,8 @@ interface IPeerGroup {
 
     close(): void;
 
+    isConnecting(peer: string): boolean
+
     isConnected(peer: string): boolean
 }
 
@@ -124,8 +126,19 @@ export default function Table(props: { player?: Player, players: Record<string, 
     }
 
     function computePeerStyle(peer: Player) {
-        return styles.card;
-        // return `${styles.card} ${peerGroup?.isConnected(peer.uuid) ? styles.connected : ''}  ${peer.uuid === player?.uuid ? styles.self : ''}`;
+        return [
+            [styles.card],
+            peerGroup?.isConnecting(peer.uuid) ? [styles.connecting] : []
+        ].flat().join(' ');
+    }
+
+    function filteredPlayers() {
+        return Object.values(state.players)
+            .filter(peer =>
+                peer.uuid === player?.uuid ||
+                peerGroup?.isConnecting(peer.uuid) ||
+                peerGroup?.isConnected(peer.uuid)
+            );
     }
 
     return <>
@@ -138,7 +151,7 @@ export default function Table(props: { player?: Player, players: Record<string, 
         </div>
 
         <div className={styles.grid}>
-            {Object.values(state.players).map(peer => {
+            {filteredPlayers().map(peer => {
                 const vote = playerVote(state, peer);
                 return <div className={computePeerStyle(peer)} key={peer.uuid}>
                     <p className={inter.className}>{peer.name}</p>

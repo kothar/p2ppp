@@ -80,7 +80,7 @@ button.card {
     text-align: left;
 }
 
-.card.connected::after, .card.self::after {
+.card.connected::after, .card.self::after, .card.connecting::after {
     display: block;
     position: absolute;
     width: 0.5em;
@@ -94,6 +94,10 @@ button.card {
 
 .card.self::after {
     background: blue;
+}
+
+.card.connecting::after {
+    background: orange;
 }
 
 .card span {
