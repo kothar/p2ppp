@@ -47,6 +47,14 @@
     position: relative;
 }
 
+.votegrid {
+    display: grid;
+    grid-template-columns: repeat(13, minmax(5%, auto));
+    width: var(--max-width);
+    max-width: 100%;
+    position: relative;
+}
+
 .grid.schemes {
     position: absolute;
     top: -8.5em;
@@ -80,7 +88,12 @@ button.card {
     text-align: left;
 }
 
-.card.connected::after, .card.self::after, .card.connecting::after {
+.card.self {
+    background: var(--primary-glow);
+    cursor: pointer;
+}
+
+.card.connected::after, .card.connecting::after {
     display: block;
     position: absolute;
     width: 0.5em;
@@ -90,10 +103,6 @@ button.card {
     background: green;
     content: '';
     border-radius: var(--border-radius);
-}
-
-.card.self::after {
-    background: blue;
 }
 
 .card.connecting::after {

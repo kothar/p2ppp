@@ -128,7 +128,8 @@ export default function Table(props: { player?: Player, players: Record<string, 
     function computePeerStyle(peer: Player) {
         return [
             [styles.card],
-            peerGroup?.isConnecting(peer.uuid) ? [styles.connecting] : []
+            peerGroup?.isConnecting(peer.uuid) ? [styles.connecting] : [],
+            peer.uuid === player?.uuid ? [styles.self] : []
         ].flat().join(' ');
     }
 
@@ -153,7 +154,10 @@ export default function Table(props: { player?: Player, players: Record<string, 
         <div className={styles.grid}>
             {filteredPlayers().map(peer => {
                 const vote = playerVote(state, peer);
-                return <div className={computePeerStyle(peer)} key={peer.uuid}>
+                return <div className={computePeerStyle(peer)} key={peer.uuid}
+                            onClick={() => {
+                                if (peer.uuid === player?.uuid) editPlayerName()
+                            }}>
                     <p className={inter.className}>{peer.name}</p>
                     <h2 className={inter.className}>{state.revealVotes ? vote?.value ?? '?' : (vote ? '✔' : '⋯')}</h2>
                 </div>
@@ -177,7 +181,7 @@ export default function Table(props: { player?: Player, players: Record<string, 
             </div> :
 
             <>
-                <div className={styles.grid}>
+                <div className={styles.votegrid}>
                     <button className={styles.card} onClick={() => setShowScemes(!showSchemes)}>
                         <p className={inter.className}>Scheme</p>
                         <h2 className={inter.className}>{state.voteScheme}</h2>
